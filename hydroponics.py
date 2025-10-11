@@ -10,6 +10,10 @@ WIFI_SSID = "aboy" #"Samsung Galaxy S8+"
 WIFI_PASSWORD ="aries1234" #"inchristalone"
 SERVER_BASE_URL = "http://192.168.5.4:5000" #"http://192.168.43.240:5000" #
 
+
+SEND_INTERVAL_SECONDS = 5  # can be 60 for 1 min
+MAX_RETRIES = 5  # stop loop after 5 consecutive failures
+
 # commented because hardware not available
 # oled_display = OledDisplay()
 # sensor_data = SensorModule()
@@ -118,7 +122,8 @@ def send_sensor_data():
         return
 
     if not connect_wifi(WIFI_SSID, WIFI_PASSWORD):
-        return
+        raise Exception('can not connet network')
+        # return
 
     url = f"{SERVER_BASE_URL}/readings"
     headers = {"Content-Type": "application/json"}
@@ -152,16 +157,36 @@ def send_sensor_data():
         res.close()
     except Exception as e:
         print("❌ Error sending data:", e)
+        raise e
         # if it failed to send, store that data locally with timestamps and send sending is restored
+
+
+
+def send_sensor_data_periodically():
+    retry_count = 0
+    while True:
+        try:
+            send_sensor_data()
+            retry_count =0  # reset retry counter on success
+            print(f'retries is: {retry_count}')
+        except Exception as e:
+            retry_count += 1
+            print(f"❌ Error sending data (attempt {retry_count}/{MAX_RETRIES}): {e}")
+            if retry_count >= MAX_RETRIES:
+                print("⚠️ Max retries reached, stopping periodic sending.")
+                break
+        print(f"⏱ Waiting for {SEND_INTERVAL_SECONDS} seconds before next send...\n")
+        time.sleep(SEND_INTERVAL_SECONDS)
 
 
 def boot():
     if "config.json" in os.listdir():
         print("Config found → Running in NORMAL MODE")
-        send_sensor_data()
+        send_sensor_data_periodically()
     else:
         print("No config found → Running in REGISTRATION MODE")
         register_iot()
+        send_sensor_data_periodically()  # start sending after registration
 
 boot()
 # --- Example execution ---
