@@ -46,11 +46,16 @@ class SensorModule:
         self.dht_pin = Pin(16, Pin.IN)       # DHT11
         self.trigger = Pin(3, Pin.OUT)       # Ultrasonic trigger
         self.echo = Pin(2, Pin.IN)           # Ultrasonic echo
+        self.ph_sensor = ADC(Pin(27))  # GP26 (ADC0)
 
         # --- Calibration values ---
         self.VREF = 3.3
         self.K_VALUE = 0.5
         self.water_temp = 25.0  # Default, updated by DS18B20
+        self.ADC_RESOLUTION = 65535  # 16-bit for MicroPython on Pico
+        self.voltage_at_pH4 = 1.92   # volts (example, measure in your setup)
+        self.voltage_at_pH7 = 2.50   # volts (example, measure in your setup)
+        self.slope = (7.0 - 4.0) / (self.voltage_at_pH7 - self.voltage_at_pH4)
 
         # --- Sensor setup ---
         self.dht_sensor = dht.DHT11(self.dht_pin)
@@ -65,6 +70,15 @@ class SensorModule:
     # Individual sensor readings
     # ------------------------------
 
+    def read_ph(self):
+        # Read raw ADC value
+        raw = self.ph_sensor.read_u16()
+        voltage = (raw / self.ADC_RESOLUTION) * self.VREF
+        
+        # Convert voltage to pH using calibration
+        ph_value = 7.0 + (voltage - self.voltage_at_pH7) * self.slope
+        return ph_value, voltage
+    
     def read_dht(self):
         try:
             self.dht_sensor.measure()
@@ -135,6 +149,7 @@ class SensorModule:
         water_temp = self.read_ds18b20()
         tds, voltage = self.read_tds()
         distance = self.read_ultrasonic()
+        ph_value, voltage = self.read_ph()
 
         readings = {
             "DHT_ambient_temp_sensor": ambient_temp,
@@ -142,7 +157,9 @@ class SensorModule:
             "water_temp": water_temp,
             "tds": tds,
             "tds_voltage": voltage,
-            "ULTRASONIC_tankWaterLevel_sensor": distance
+            "water_level": distance,
+            "ph":ph_value,
+            "voltage":voltage,
         }
 
         self.display_data(readings)
@@ -153,10 +170,12 @@ class SensorModule:
     # ------------------------------
     def display_data(self, readings):
         lines = [
-            "HYDROPONICS",
+            # "HYDROPONICS",
             f"AT:{readings['ambient_temp']}C  H:{readings['humidity']}%",
             f"WT:{readings['water_temp']}C  TDS:{readings['tds']}ppm",
             f"WL:{readings['water_level']}cm",
+            f"WL:{readings['ph']}",
+            f"WL:{readings['voltage']}",
         ]
         self.display.show_text(lines)
 
