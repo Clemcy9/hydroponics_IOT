@@ -66,8 +66,7 @@ def connect_wifi(ssid, password):
         print("Failed to connect")
         return False
 
-
-def save_response(filename, data):
+def save_file(filename, data):
     try:
         with open(filename, "w") as f:
             ujson.dump(data, f)
@@ -75,8 +74,7 @@ def save_response(filename, data):
     except Exception as e:
         print("❌ Error saving file:", e)
 
-
-def load_response(filename):
+def load_file(filename):
     if filename in os.listdir():
         try:
             with open(filename, "r") as f:
@@ -84,7 +82,6 @@ def load_response(filename):
         except Exception as e:
             print("❌ Error reading file:", e)
     return None
-
 
 def register_iot():
     oled_display.show_text(["HYDROPONICS", "REGISTRATION MODE"])
@@ -118,7 +115,7 @@ def register_iot():
         if res.status_code == 201:
             response_data = res.json()
             res.close()
-            save_response(CONFIG_FILE, response_data)
+            save_file(CONFIG_FILE, response_data)
             print("🎉 Registration successful, config saved.")
             oled_display.show_text(["HYDROPONICS", "REGISTRATION SUCCESSFUL"])
         else:
@@ -128,15 +125,14 @@ def register_iot():
 
     except Exception as e:
         print("❌ Error during registration:", e)
-        previous_saved = load_response(CONFIG_FILE)
+        previous_saved = load_file(CONFIG_FILE)
         if previous_saved:
             print("⚙️ Using previously saved config.")
         else:
             print("No existing configuration found.")
 
-
 def send_sensor_data():
-    config = load_response(CONFIG_FILE)
+    config = load_file(CONFIG_FILE)
     if not config:
         print("⚠️ No config found, please register first.")
         return
@@ -181,8 +177,6 @@ def send_sensor_data():
         raise e
         # if it failed to send, store that data locally with timestamps and send sending is restored
 
-
-
 def send_sensor_data_periodically():
     retry_count = 0
     while True:
@@ -205,7 +199,6 @@ def send_sensor_data_periodically():
         print(f"Waiting for {SEND_INTERVAL_SECONDS} seconds before next send...\n")
         time.sleep(SEND_INTERVAL_SECONDS)
 
-
 def boot():
     if "config.json" in os.listdir():
         print("Config found → Running in NORMAL MODE")
@@ -216,9 +209,4 @@ def boot():
         send_sensor_data_periodically()  # start sending after registration
 
 boot()
-# --- Example execution ---
-# To register:
-# register_iot()
 
-# To send periodic data:
-# send_sensor_data()
