@@ -6,26 +6,45 @@ import urequests
 from sensors_actuator import OledDisplay, SensorModule
 
 CONFIG_FILE = "config.json"
-WIFI_SSID = "aboy" #"Samsung Galaxy S8+" 
-WIFI_PASSWORD ="aries1234" #"inchristalone"
-SERVER_BASE_URL = "http://192.168.5.4:5000" #"http://192.168.43.240:5000" #
+MODE = "local" #or cloud
+
+SETTINGS ={
+    "local":{
+        "WIFI_SSID":"Samsung Galaxy S8+", # "aboy"
+        "WIFI_PASSWORD" :"inchristalone", #"aries1234" 
+        "SERVER_BASE_URL" :"http://192.168.43.240:5000" # "http://192.168.5.4:5000"
+
+    }
+}
+
+# Defaults to cloud mode
+WIFI_SSID = "aboy"
+WIFI_PASSWORD = "aries1234"
+SERVER_BASE_URL = "https://iot-server-9u9o.onrender.com"
+
+# Override with local settings if MODE = "local"
+if MODE == "cloud":
+    WIFI_SSID = SETTINGS["local"]["WIFI_SSID"]
+    WIFI_PASSWORD = SETTINGS["local"]["WIFI_PASSWORD"]
+    SERVER_BASE_URL = SETTINGS["local"]["SERVER_BASE_URL"]
 
 
 SEND_INTERVAL_SECONDS = 5  # can be 60 for 1 min
 MAX_RETRIES = 5  # stop loop after 5 consecutive failures
 
 # commented because hardware not available
-# oled_display = OledDisplay()
-# sensor_data = SensorModule()
-# readings = sensor_data.read_all_sensors()
-readings = {
-            "DHT_ambient_temp_sensor": 1,
-            "DHT_humiity_sensor": 2,
-            "water_temp": 3,
-            "tds": 4,
-            "tds_voltage": 5,
-            "ULTRASONIC_tankWaterLevel_sensor": 6
-        }
+oled_display = OledDisplay()
+sensor_data = SensorModule()
+readings = sensor_data.read_all_sensors()
+# readings = {
+#             "ambient_temp": 1,
+#             "humidity": 2,
+#             "water_temp": 3,
+#             "water_level",45
+#             "tds": 4,
+#             "ph":33,
+#             # "tds_voltage": 5,
+#         }
 
 def connect_wifi(ssid, password):
     wlan = network.WLAN(network.STA_IF)
@@ -36,6 +55,7 @@ def connect_wifi(ssid, password):
         retries = 0
         while not wlan.isconnected() and retries < 20:
             print("Waiting for connection...")
+            oled_display.show_text(["HYDROPONICS", "wifi failure", "create new hotspot", f"N={WIFI_SSID}",f"P={WIFI_PASSWORD}"])
             time.sleep(1)
             retries += 1
 
@@ -67,9 +87,9 @@ def load_response(filename):
 
 
 def register_iot():
-    # oled_display.show_text(["HYDROPONICS", "REGISTRATION MODE"])
+    oled_display.show_text(["HYDROPONICS", "REGISTRATION MODE"])
     if not connect_wifi(WIFI_SSID, WIFI_PASSWORD):
-        # oled_display.show_text(["HYDROPONICS", "wifi couldn't connect"])
+        oled_display.show_text(["HYDROPONICS", "wifi failure", "create new hotspot", f"N={WIFI_SSID}",f"P={WIFI_PASSWORD}"])
         return
 
     url = f"{SERVER_BASE_URL}/iot/register"
@@ -78,9 +98,9 @@ def register_iot():
         "name": "iot-picoZeroW",
         "status": "active",
         "sensors": [
-            {"name": "DHT_ambient_temp_sensor"},
-            {"name": "DHT_humiity_sensor"},
-            {"name": "ULTRASONIC_tankWaterLevel_sensor"},
+            {"name": "ambient_temp"},
+            {"name": "humidity"},
+            {"name": "water_level"},
             {"name": "TDS_waterQuaity_sensor"}
         ],
         "actuators": [
@@ -90,7 +110,7 @@ def register_iot():
     }
 
     try:
-        # oled_display.show_text(["HYDROPONICS", "wifi connected successfully"])
+        oled_display.show_text(["HYDROPONICS", "wifi connected"])
         print("📡 Sending registration payload...")
         res = urequests.post(url, headers=headers, data=ujson.dumps(payload))
         print("HTTP Status:", res.status_code)
@@ -100,10 +120,10 @@ def register_iot():
             res.close()
             save_response(CONFIG_FILE, response_data)
             print("🎉 Registration successful, config saved.")
-            # oled_display.show_text(["HYDROPONICS", "REGISTRATION SUCCESSFUL"])
+            oled_display.show_text(["HYDROPONICS", "REGISTRATION SUCCESSFUL"])
         else:
             print("⚠️ Unexpected response:", res.text)
-            # oled_display.show_text(["HYDROPONICS", "REGISTRATION FAILED"])
+            oled_display.show_text(["HYDROPONICS", "REGISTRATION FAILED"])
             res.close()
 
     except Exception as e:
@@ -122,6 +142,7 @@ def send_sensor_data():
         return
 
     if not connect_wifi(WIFI_SSID, WIFI_PASSWORD):
+        oled_display.show_text(["HYDROPONICS", "wifi failure", "create new hotspot", f"N={WIFI_SSID}",f"P={WIFI_PASSWORD}"])
         raise Exception('can not connet network')
         # return
 
@@ -166,16 +187,22 @@ def send_sensor_data_periodically():
     retry_count = 0
     while True:
         try:
+            oled_display.show_text(["HYDROPONICS", "Data MODE", "sending.."])
             send_sensor_data()
+            oled_display.show_text(["HYDROPONICS", "Data MODE", "sent..."])
             retry_count =0  # reset retry counter on success
             print(f'retries is: {retry_count}')
         except Exception as e:
+            oled_display.show_text(["HYDROPONICS", "wifi failure", f"retries:{retry_count}"])
+        
             retry_count += 1
             print(f"❌ Error sending data (attempt {retry_count}/{MAX_RETRIES}): {e}")
             if retry_count >= MAX_RETRIES:
                 print("⚠️ Max retries reached, stopping periodic sending.")
+                oled_display.show_text(["HYDROPONICS", "wifi failure", "max retries ", "restart d system"])
+        
                 break
-        print(f"⏱ Waiting for {SEND_INTERVAL_SECONDS} seconds before next send...\n")
+        print(f"Waiting for {SEND_INTERVAL_SECONDS} seconds before next send...\n")
         time.sleep(SEND_INTERVAL_SECONDS)
 
 

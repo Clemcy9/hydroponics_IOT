@@ -42,19 +42,20 @@ class SensorModule:
     def __init__(self):
         # --- Sensor pins ---
         self.tds_adc = ADC(Pin(26))         # TDS analog input
-        self.ds_pin = Pin(14)                # DS18B20
-        self.dht_pin = Pin(16, Pin.IN)       # DHT11
-        self.trigger = Pin(3, Pin.OUT)       # Ultrasonic trigger
-        self.echo = Pin(2, Pin.IN)           # Ultrasonic echo
-        self.ph_sensor = ADC(Pin(27))  # GP26 (ADC0)
-
+        self.ds_pin = Pin(15)                # DS18B20
+        self.dht_pin = Pin(17, Pin.IN)       # DHT11
+        self.trigger = Pin(8, Pin.OUT)       # Ultrasonic trigger
+        self.echo = Pin(9, Pin.IN)           # Ultrasonic echo
+        self.ph_sensor = ADC(Pin(27))
+        
+        
         # --- Calibration values ---
         self.VREF = 3.3
         self.K_VALUE = 0.5
         self.water_temp = 25.0  # Default, updated by DS18B20
-        self.ADC_RESOLUTION = 65535  # 16-bit for MicroPython on Pico
+        self.ADC_RESOLUTION = 65535
         self.voltage_at_pH4 = 1.92   # volts (example, measure in your setup)
-        self.voltage_at_pH7 = 2.50   # volts (example, measure in your setup)
+        self.voltage_at_pH7 = 2.50
         self.slope = (7.0 - 4.0) / (self.voltage_at_pH7 - self.voltage_at_pH4)
 
         # --- Sensor setup ---
@@ -69,16 +70,16 @@ class SensorModule:
     # ------------------------------
     # Individual sensor readings
     # ------------------------------
-
+    
     def read_ph(self):
         # Read raw ADC value
-        raw = self.ph_sensor.read_u16()
-        voltage = (raw / self.ADC_RESOLUTION) * self.VREF
+        self.raw = self.ph_sensor.read_u16()
+        self.voltage = (self.raw / self.ADC_RESOLUTION) * self.VREF
         
         # Convert voltage to pH using calibration
-        ph_value = 7.0 + (voltage - self.voltage_at_pH7) * self.slope
-        return ph_value, voltage
-    
+        self.ph_value = 7.0 + (self.voltage - self.voltage_at_pH7) * self.slope
+        return self.ph_value, self.voltage
+
     def read_dht(self):
         try:
             self.dht_sensor.measure()
@@ -149,17 +150,16 @@ class SensorModule:
         water_temp = self.read_ds18b20()
         tds, voltage = self.read_tds()
         distance = self.read_ultrasonic()
-        ph_value, voltage = self.read_ph()
+        ph, v = self.read_ph()
 
         readings = {
-            "DHT_ambient_temp_sensor": ambient_temp,
-            "DHT_humiity_sensor": humidity,
+            "ambient_temp": ambient_temp,
+            "humidity": humidity,
             "water_temp": water_temp,
             "tds": tds,
-            "tds_voltage": voltage,
+            #"tds_voltage": voltage,
             "water_level": distance,
-            "ph":ph_value,
-            "voltage":voltage,
+            "ph":ph
         }
 
         self.display_data(readings)
@@ -170,12 +170,11 @@ class SensorModule:
     # ------------------------------
     def display_data(self, readings):
         lines = [
-            # "HYDROPONICS",
+            "HYDROPONICS",
             f"AT:{readings['ambient_temp']}C  H:{readings['humidity']}%",
             f"WT:{readings['water_temp']}C  TDS:{readings['tds']}ppm",
             f"WL:{readings['water_level']}cm",
             f"WL:{readings['ph']}",
-            f"WL:{readings['voltage']}",
         ]
         self.display.show_text(lines)
 
@@ -189,4 +188,4 @@ class SensorModule:
 #     while True:
 #         data = sensor_module.read_all_sensors()
 #         print("Sensor Readings:", data)
-#         time.sleep(2)
+#         # time.sleep(2)
