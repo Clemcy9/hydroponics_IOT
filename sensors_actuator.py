@@ -47,6 +47,7 @@ class SensorModule:
         self.trigger = Pin(8, Pin.OUT)       # Ultrasonic trigger
         self.echo = Pin(9, Pin.IN)           # Ultrasonic echo
         self.ph_sensor = ADC(Pin(27))
+        self.ldr_sensor = ADC(Pin(28))
         
         
         # --- Calibration values ---
@@ -70,6 +71,11 @@ class SensorModule:
     # ------------------------------
     # Individual sensor readings
     # ------------------------------
+
+    def read_ldr(self):
+        self.light = self.ldr_sensor.read_u16()
+        self.light = round(self.light/65535*100,1)
+        return self.light
     
     def read_ph(self):
         # Read raw ADC value
@@ -87,7 +93,7 @@ class SensorModule:
             hum = self.dht_sensor.humidity()
             return temp, hum
         except Exception as e:
-            print("❌ DHT11 error:", e)
+            print("DHT11 error:", e)
             return None, None
 
     def read_ds18b20(self):
@@ -100,7 +106,7 @@ class SensorModule:
                     self.water_temp = temp
                     return temp
         except Exception as e:
-            print("❌ DS18B20 error:", e)
+            print("DS18B20 error:", e)
         return None
 
     def read_tds(self):
@@ -119,7 +125,7 @@ class SensorModule:
 
             return round(tds, 2), round(voltage, 2)
         except Exception as e:
-            print("❌ TDS read error:", e)
+            print("TDS read error:", e)
             return None, None
 
     def read_ultrasonic(self):
@@ -139,7 +145,7 @@ class SensorModule:
             distance = (timepassed * 0.0343) / 2
             return round(distance, 2)
         except Exception as e:
-            print("❌ Ultrasonic read error:", e)
+            print("Ultrasonic read error:", e)
             return None
 
     # ------------------------------
@@ -151,15 +157,17 @@ class SensorModule:
         tds, voltage = self.read_tds()
         distance = self.read_ultrasonic()
         ph, v = self.read_ph()
+        ldr = self.read_ldr()
 
         readings = {
-            "ambient_temp": ambient_temp,
+            "ambient_temp": round(ambient_temp,1),
             "humidity": humidity,
-            "water_temp": water_temp,
-            "tds": tds,
+            "water_temp": round(water_temp,1),
+            "tds": round(tds,1),
             #"tds_voltage": voltage,
-            "water_level": distance,
-            "ph":ph
+            "ldr": ldr,
+            "water_level": round(distance,1),
+            "ph":round(ph,1)
         }
 
         self.display_data(readings)
@@ -170,11 +178,11 @@ class SensorModule:
     # ------------------------------
     def display_data(self, readings):
         lines = [
-            "HYDROPONICS",
             f"AT:{readings['ambient_temp']}C  H:{readings['humidity']}%",
-            f"WT:{readings['water_temp']}C  TDS:{readings['tds']}ppm",
+            f"WT:{readings['water_temp']}C Ldr:{readings['ldr']}",
+            f"TDS:{readings['tds']}ppm",
             f"WL:{readings['water_level']}cm",
-            f"WL:{readings['ph']}",
+            f"PH:{readings['ph']}",
         ]
         self.display.show_text(lines)
 
@@ -182,10 +190,10 @@ class SensorModule:
 # ==============================
 # DEMO LOOP (for testing)
 # ==============================
-# if __name__ == "__main__":
-#     sensor_module = SensorModule()
+if __name__ == "__main__":
+    sensor_module = SensorModule()
 
-#     while True:
-#         data = sensor_module.read_all_sensors()
-#         print("Sensor Readings:", data)
-#         # time.sleep(2)
+    while True:
+        data = sensor_module.read_all_sensors()
+        print("Sensor Readings:", data)
+        # time.sleep(2)
