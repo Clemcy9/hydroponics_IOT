@@ -186,7 +186,7 @@ def load_file(filename):
 
 def register_iot():
     oled_display.show_text(["HYDROPONICS", "REGISTRATION MODE"])
-    connect_wifi(WIFI_SSID, WIFI_PASSWORD)
+    # connect_wifi(WIFI_SSID, WIFI_PASSWORD)
     url = f"{SERVER_BASE_URL}/iot/register"
     headers = {"Content-Type": "application/json"}
     payload = {
@@ -230,51 +230,81 @@ def register_iot():
         print("Error during registration:", e)
         return 0
 
-def send_sensor_data():
+def cache_readings():
     register = load_file(REGISTER_FILE)
-    if not register:
-        print("⚠️ No register found, please register first.")
-        return
-
-    if not connect_wifi(WIFI_SSID, WIFI_PASSWORD):
-        oled_display.show_text(["HYDROPONICS", "wifi failure", "create new hotspot", f"N={WIFI_SSID}",f"P={WIFI_PASSWORD}"])
-        raise Exception('can not connet network')
-        # return
-
-    url = f"{SERVER_BASE_URL}/readings"
-    headers = {"Content-Type": "application/json"}
-
     # Construct payload using IDs from register
     payload = {"sensors": [], "actuators": []}
 
-    # --- sensors ---
-    for sensor in register.get("sensors", []):
-        name = sensor["name"]
-        if name in readings:
-            payload["sensors"].append({
-                "sensor": sensor["_id"],
-                "value": str(readings[name]),
-            })
+    # try to use time sentinel
+    t1 = time.ticks_ms()
+    counter = 1
+    print('t1 time:', t1)
+    interval = DATA_CACHING_INTERVAL_SECONDS
+    while True:
+        t2 = time.ticks_ms()
+        if 1000*(t2-t1) >= interval:
+            # append data to payload
+            # --- sensors ---
+            for sensor in register.get("sensors", []):
+                name = sensor["name"]
+                if name in readings:
+                    payload["sensors"].append({
+                        "sensor": sensor["_id"],
+                        "name":name,
+                        "value": str(sensor_data.read_all_sensors()[name]),
+                    })
 
-    # --- actuators (optional) ---
-    # actuator_states = {"Pump": 1, "Fan": 0}
-    # for actuator in register.get("actuators", []):
-    #     name = actuator["name"]
-    #     if name in actuator_states:
-    #         payload["actuators"].append({
-    #             "actuator": actuator["_id"],
-    #             "value": str(actuator_states[name]),
-    #         })
+            # --- actuators (optional) ---
+            # actuator_states = {"Pump": 1, "Fan": 0}
+            # for actuator in register.get("actuators", []):
+            #     name = actuator["name"]
+            #     if name in actuator_states:
+            #         payload["actuators"].append({
+            #             "actuator": actuator["_id"],
+            #             "name":name,
+            #             "value": str(actuator_states[name]),
+            #         })
+
+            # save payload to db.json()
+            # only save to db.json() after 10 iteration of appending readings to payload
+            if (counter%10 ==0):
+                append_file(DB_FILE, payload)
+                print(f'saved payload to db after {counter} iteration')
+                # exit after saving a batch so operations like send() can work
+                return 1
+
+            t1=time.ticks_ms()
+            counter +=1
+        
+
+def send_sensor_data():
+    url = f"{SERVER_BASE_URL}/readings"
+    headers = {"Content-Type": "application/json"}
+
+    # get readings from store db.json
+    payload = load_file(DB_FILE)
+
     try:
-        print("📡 Sending sensor data:", payload)
+        print("Sending sensor data:", payload)
         res = urequests.post(url, headers=headers, data=ujson.dumps(payload))
         print("HTTP Status:", res.status_code)
         print("Server Response:", res.text)
         res.close()
+        return 1
+
     except Exception as e:
         print("Error sending data:", e)
-        raise e
-        # if it failed to send, store that data locally with timestamps and send sending is restored
+
+        # Safely increase delay_count for each sensor
+        if "sensors" in payload:
+            for sensor in payload["sensors"]:
+                current = sensor.get("delay_count", 0)
+                sensor["delay_count"] = current + 1
+                print("Updated delay_count:", sensor["delay_count"])
+
+            # overwrite back updated payload to file: caching can't be happening while trying to send
+            overwrite_file(DB_FILE, payload)
+            raise
 
 def send_sensor_data_periodically():
     retry_count = 0
@@ -298,14 +328,14 @@ def send_sensor_data_periodically():
         print(f"Waiting for {SEND_INTERVAL_SECONDS} seconds before next send...\n")
         time.sleep(SEND_INTERVAL_SECONDS)
 
-def boot():
-    if "register.json" in os.listdir():
-        print("Config found → Running in NORMAL MODE")
-        send_sensor_data_periodically()
-    else:
-        print("No register found → Running in REGISTRATION MODE")
-        register_iot()
-        send_sensor_data_periodically()  # start sending after registration
+# def boot():
+#     if "register.json" in os.listdir():
+#         print("Config found → Running in NORMAL MODE")
+#         send_sensor_data_periodically()
+#     else:
+#         print("No register found → Running in REGISTRATION MODE")
+#         register_iot()
+#         send_sensor_data_periodically()  # start sending after registration
 
-boot()
+# boot()
 
