@@ -1,0 +1,176 @@
+{
+  "sensors": [
+    {
+      "value": "1204.0",
+      "name": "water_level",
+      "sensor": "6929c05df32115e75aa327aa"
+    },
+    {
+      "value": "28.8",
+      "name": "water_temp",
+      "sensor": "6929c05df32115e75aa327ab"
+    },
+    {
+      "value": "29",
+      "name": "ambient_temp",
+      "sensor": "6929c05df32115e75aa327ac"
+    },
+    { "value": "80", "name": "humidity", "sensor": "6929c05df32115e75aa327ad" },
+    { "value": "83.1", "name": "ldr", "sensor": "6929c05df32115e75aa327ae" },
+    { "value": "9.1", "name": "ph", "sensor": "6929c05df32115e75aa327af" },
+    { "value": "7.3", "name": "tds", "sensor": "6929c05df32115e75aa327b0" },
+    {
+      "value": "1203.5",
+      "name": "water_level",
+      "sensor": "6929c05df32115e75aa327aa"
+    },
+    {
+      "value": "28.9",
+      "name": "water_temp",
+      "sensor": "6929c05df32115e75aa327ab"
+    },
+    {
+      "value": "29",
+      "name": "ambient_temp",
+      "sensor": "6929c05df32115e75aa327ac"
+    },
+    { "value": "83", "name": "humidity", "sensor": "6929c05df32115e75aa327ad" },
+    { "value": "83.0", "name": "ldr", "sensor": "6929c05df32115e75aa327ae" },
+    { "value": "9.1", "name": "ph", "sensor": "6929c05df32115e75aa327af" },
+    { "value": "7.0", "name": "tds", "sensor": "6929c05df32115e75aa327b0" },
+    {
+      "value": "1204.0",
+      "name": "water_level",
+      "sensor": "6929c05df32115e75aa327aa"
+    },
+    {
+      "value": "28.9",
+      "name": "water_temp",
+      "sensor": "6929c05df32115e75aa327ab"
+    },
+    {
+      "value": "29",
+      "name": "ambient_temp",
+      "sensor": "6929c05df32115e75aa327ac"
+    },
+    { "value": "83", "name": "humidity", "sensor": "6929c05df32115e75aa327ad" },
+    { "value": "83.5", "name": "ldr", "sensor": "6929c05df32115e75aa327ae" },
+    { "value": "9.1", "name": "ph", "sensor": "6929c05df32115e75aa327af" },
+    { "value": "8.0", "name": "tds", "sensor": "6929c05df32115e75aa327b0" },
+    {
+      "sensor": "6929c05df32115e75aa327aa",
+      "name": "water_level",
+      "value": "1203.9"
+    },
+    {
+      "sensor": "6929c05df32115e75aa327ab",
+      "name": "water_temp",
+      "value": "28.8"
+    },
+    {
+      "sensor": "6929c05df32115e75aa327ac",
+      "name": "ambient_temp",
+      "value": "29"
+    },
+    { "sensor": "6929c05df32115e75aa327ad", "name": "humidity", "value": "82" },
+    { "sensor": "6929c05df32115e75aa327ae", "name": "ldr", "value": "83.6" },
+    { "sensor": "6929c05df32115e75aa327af", "name": "ph", "value": "9.1" },
+    { "sensor": "6929c05df32115e75aa327b0", "name": "tds", "value": "8.0" },
+    {
+      "sensor": "6929c05df32115e75aa327aa",
+      "name": "water_level",
+      "value": "1203.8"
+    },
+    {
+      "sensor": "6929c05df32115e75aa327ab",
+      "name": "water_temp",
+      "value": "28.9"
+    },
+    {
+      "sensor": "6929c05df32115e75aa327ac",
+      "name": "ambient_temp",
+      "value": "29"
+    },
+    { "sensor": "6929c05df32115e75aa327ad", "name": "humidity", "value": "83" },
+    { "sensor": "6929c05df32115e75aa327ae", "name": "ldr", "value": "83.1" },
+    { "sensor": "6929c05df32115e75aa327af", "name": "ph", "value": "9.1" },
+    { "sensor": "6929c05df32115e75aa327b0", "name": "tds", "value": "8.0" },
+    {
+      "sensor": "6929c05df32115e75aa327aa",
+      "name": "water_level",
+      "value": "1204.0"
+    },
+    {
+      "sensor": "6929c05df32115e75aa327ab",
+      "name": "water_temp",
+      "value": "28.9"
+    },
+    {
+      "sensor": "6929c05df32115e75aa327ac",
+      "name": "ambient_temp",
+      "value": "29"
+    },
+    { "sensor": "6929c05df32115e75aa327ad", "name": "humidity", "value": "83" },
+    { "sensor": "6929c05df32115e75aa327ae", "name": "ldr", "value": "82.5" },
+    { "sensor": "6929c05df32115e75aa327af", "name": "ph", "value": "9.1" },
+    { "sensor": "6929c05df32115e75aa327b0", "name": "tds", "value": "7.6" },
+    {
+      "name": "water_level",
+      "value": "1203.7",
+      "sensor": "6929c05df32115e75aa327aa"
+    },
+    {
+      "name": "water_temp",
+      "value": "28.9",
+      "sensor": "6929c05df32115e75aa327ab"
+    },
+    {
+      "name": "ambient_temp",
+      "value": "29",
+      "sensor": "6929c05df32115e75aa327ac"
+    },
+    { "name": "humidity", "value": "82", "sensor": "6929c05df32115e75aa327ad" },
+    { "name": "ldr", "value": "82.5", "sensor": "6929c05df32115e75aa327ae" },
+    { "name": "ph", "value": "9.1", "sensor": "6929c05df32115e75aa327af" },
+    { "name": "tds", "value": "9.6", "sensor": "6929c05df32115e75aa327b0" },
+    {
+      "name": "water_level",
+      "value": "1204.3",
+      "sensor": "6929c05df32115e75aa327aa"
+    },
+    {
+      "name": "water_temp",
+      "value": "28.9",
+      "sensor": "6929c05df32115e75aa327ab"
+    },
+    {
+      "name": "ambient_temp",
+      "value": "29",
+      "sensor": "6929c05df32115e75aa327ac"
+    },
+    { "name": "humidity", "value": "83", "sensor": "6929c05df32115e75aa327ad" },
+    { "name": "ldr", "value": "82.4", "sensor": "6929c05df32115e75aa327ae" },
+    { "name": "ph", "value": "9.1", "sensor": "6929c05df32115e75aa327af" },
+    { "name": "tds", "value": "8.3", "sensor": "6929c05df32115e75aa327b0" },
+    {
+      "name": "water_level",
+      "value": "1204.2",
+      "sensor": "6929c05df32115e75aa327aa"
+    },
+    {
+      "name": "water_temp",
+      "value": "28.9",
+      "sensor": "6929c05df32115e75aa327ab"
+    },
+    {
+      "name": "ambient_temp",
+      "value": "29",
+      "sensor": "6929c05df32115e75aa327ac"
+    },
+    { "name": "humidity", "value": "83", "sensor": "6929c05df32115e75aa327ad" },
+    { "name": "ldr", "value": "82.5", "sensor": "6929c05df32115e75aa327ae" },
+    { "name": "ph", "value": "9.1", "sensor": "6929c05df32115e75aa327af" },
+    { "name": "tds", "value": "7.6", "sensor": "6929c05df32115e75aa327b0" }
+  ],
+  "actuators": []
+}

@@ -7,7 +7,7 @@ from sensors_actuator import OledDisplay, SensorModule
 
 REGISTER_FILE = "register.json"
 DB_FILE = "db.json"
-MODE = "local" #or cloud
+MODE = "cloud" #or cloud
 
 SETTINGS ={
     "local":{
@@ -19,19 +19,20 @@ SETTINGS ={
 }
 
 # Defaults to cloud mode
-WIFI_SSID = "aboy"
-WIFI_PASSWORD = "aries1234"
+WIFI_SSID = "Samsung Galaxy S8+"
+WIFI_PASSWORD = "inchristalone"
 SERVER_BASE_URL = "https://iot-server-9u9o.onrender.com"
 
 # Override with local settings if MODE = "local"
-if MODE == "cloud":
+if MODE == "local":
     WIFI_SSID = SETTINGS["local"]["WIFI_SSID"]
     WIFI_PASSWORD = SETTINGS["local"]["WIFI_PASSWORD"]
     SERVER_BASE_URL = SETTINGS["local"]["SERVER_BASE_URL"]
 
 
-DATA_CACHING_INTERVAL_SECONDS = 10
+DATA_CACHING_INTERVAL_SECONDS = 2
 SEND_INTERVAL_SECONDS = 5  # can be 60 for 1 min
+DEBUB_TIME_INTERVAL = 30
 MAX_RETRIES = 5  # stop loop after 5 consecutive failures
 
 # algorithm
@@ -70,41 +71,56 @@ def mode_selector(*args, **kwargs):
         
         if(load_file(REGISTER_FILE)):
             # RELAY (normal) MODE
-            print("Reset mode")
+            print("Relay mode")
             time.sleep(2)
             send_sensor_data_periodically()
 
-    except IOError as e:
+    except OSError as e:
         pass
         # switch to 
     except NoInternetException as e:
-        if(not load_file(REGISTER_FILE) and not load_file(DB_FILE) ):
+        if(load_file(REGISTER_FILE) ):
             # DATA_BANK MODE
             print("DATA_BANK mode")
             time.sleep(2)
-            append_file(DB_FILE, sensor_data.read_all_sensors())
+
+            t1 = time.time()
+            while True:
+                t2 = time.time()
+                # append_file(DB_FILE, sensor_data.read_all_sensors())
+                cache_readings()
+                if(t2-t1 > DEBUB_TIME_INTERVAL):
+                    break
+            mode_selector()
+        elif( not load_file(REGISTER_FILE)):
+            # DATA_LOGGING MODE
+            print("DATA_LOGGING mode2")
+
+            t1 = time.time()
+            while True:
+                t2 = time.time()
+                sensor_data.read_all_sensors()
+                if(t2-t1 > DEBUB_TIME_INTERVAL):
+                    break
+            mode_selector()
     except NotConnectedWifi as e:
         # DATA_LOGGING MODE
         print("DATA_LOGGING mode")
-        time.sleep(2)
-        sensor_data.read_all_sensors()
-#     finally:
-#         pass
+
+        t1 = time.time()
+        while True:
+            t2 = time.time()
+            sensor_data.read_all_sensors()
+            if(t2-t1 > DEBUB_TIME_INTERVAL):
+                break
+        mode_selector()
 
 
 # commented because hardware not available
 oled_display = OledDisplay()
 sensor_data = SensorModule()
 readings = sensor_data.read_all_sensors()
-# readings = {
-#             "ambient_temp": 1,
-#             "humidity": 2,
-#             "water_temp": 3,
-#             "water_level",45
-#             "tds": 4,
-#             "ph":33,
-#             # "tds_voltage": 5,
-#         }
+
 
 # custom exceptions
 class NoInternetException(Exception):
@@ -139,31 +155,60 @@ def connect_wifi(ssid, password):
         # return False
 
 def check_internet():
-    res = urequests.get(f"{SERVER_BASE_URL}/hello")
-    if res.status_code ==200:
-        return 1
-    else:
-        raise NoInternetException
-        # return 0
-
-def append_file(filename, data):
+    print('checking internet access')
     try:
-        if not filename in os.listdir():
+        res = urequests.get(f"{SERVER_BASE_URL}/hello")
+        if res.status_code ==200:
+            return 1
+    except Exception as e:
+        print('check internet error: ',e)
+        raise NoInternetException
+
+def append_file(filename, data, datatype='sensor'):
+    try:
+        # File does NOT exist → create new file
+        if filename not in os.listdir():
             with open(filename, "w") as f:
                 ujson.dump(data, f)
             print(f"Saved {filename}")
             return 1
+
+        # File exists → read + append + rewrite
         else:
-            with open(filename, "r+") as f:
-                n_data = ujson.load(f)
-                n_data.extend(data)
-                f.seek(0)
+            # Read old content
+            with open(filename, "r") as f:
+                try:
+                    n_data = ujson.load(f)
+                except ValueError:
+                    n_data = {"sensors": [], "actuators": []}   # file is empty or corrupted
+
+            # Append new items
+            if datatype == "sensor":
+                print(f'existing sensor file:{len(n_data["sensors"])}')
+
+                # Safely increase delay_count for each sensor
+                if len(n_data["sensors"]) > 0:
+                    print(f"Updating delay_count for {len(n_data['sensors'])} sensors")
+                    for sensor in n_data["sensors"]:
+                        current = sensor.get("delay_count", 0)
+                        sensor["delay_count"] = current + 1
+                
+                n_data["sensors"].extend(data["sensors"])
+                print(f'new sensor file:{len(n_data["sensors"])}')
+            elif datatype == "actuator":
+                print(f'existing actuator file:{len(n_data["actuators"])}')
+                n_data["sensors"].extend(data.actuators)
+
+            # Rewrite the file (truncate not needed)
+            with open(filename, "w") as f:
                 ujson.dump(n_data, f)
-                f.truncate()
+
             return 1
-    except IOError as e:
+
+    except OSError as e:
         print("Error saving file:", e)
         raise
+
 
 def overwrite_file(filename, data):
     try:
@@ -171,7 +216,7 @@ def overwrite_file(filename, data):
             ujson.dump(data, f)
         print(f"Saved {filename}")
         return 1
-    except IOError as e:
+    except OSError as e:
         print("Error saving file:", e)
         raise #this will raise the current exception
 
@@ -180,7 +225,7 @@ def load_file(filename):
         try:
             with open(filename, "r") as f:
                 return ujson.load(f)
-        except IOError as e:
+        except OSError as e:
             print("Error reading file:", e)
     return None
 
@@ -226,23 +271,30 @@ def register_iot():
             res.close()
             return 0
 
-    except Exception as e:
-        print("Error during registration:", e)
+    except OSError as e:
+        print("Error during writing registration to file:", e)
         return 0
+    except Exception as e:
+        print("Network related error: ", e)
+        raise NoInternetException
 
 def cache_readings():
     register = load_file(REGISTER_FILE)
+
+    # ensure device is registered b4 caching data
+    if not register:
+        register_iot()
     # Construct payload using IDs from register
     payload = {"sensors": [], "actuators": []}
 
     # try to use time sentinel
-    t1 = time.ticks_ms()
+    t1 = time.time()
     counter = 1
-    print('t1 time:', t1)
     interval = DATA_CACHING_INTERVAL_SECONDS
     while True:
-        t2 = time.ticks_ms()
-        if 1000*(t2-t1) >= interval:
+        t2 = time.time()
+        if t2-t1 >= interval:
+            print("caching data to payload, counter: ",counter)
             # append data to payload
             # --- sensors ---
             for sensor in register.get("sensors", []):
@@ -267,13 +319,13 @@ def cache_readings():
 
             # save payload to db.json()
             # only save to db.json() after 10 iteration of appending readings to payload
-            if (counter%10 ==0):
+            if (counter%3 ==0):
                 append_file(DB_FILE, payload)
                 print(f'saved payload to db after {counter} iteration')
                 # exit after saving a batch so operations like send() can work
+                t1=time.time()
                 return 1
 
-            t1=time.ticks_ms()
             counter +=1
         
 
@@ -290,27 +342,30 @@ def send_sensor_data():
         print("HTTP Status:", res.status_code)
         print("Server Response:", res.text)
         res.close()
+        # clear up db for next data caching
+        overwrite_file(DB_FILE, {"sensors": [], "actuators": []})
         return 1
 
     except Exception as e:
         print("Error sending data:", e)
 
-        # Safely increase delay_count for each sensor
-        if "sensors" in payload:
-            for sensor in payload["sensors"]:
-                current = sensor.get("delay_count", 0)
-                sensor["delay_count"] = current + 1
-                print("Updated delay_count:", sensor["delay_count"])
+        # # Safely increase delay_count for each sensor
+        # if "sensors" in payload:
+        #     for sensor in payload["sensors"]:
+        #         current = sensor.get("delay_count", 0)
+        #         sensor["delay_count"] = current + 1
+        #         print("Updated delay_count:", sensor["delay_count"])
 
             # overwrite back updated payload to file: caching can't be happening while trying to send
-            overwrite_file(DB_FILE, payload)
-            raise
+            # overwrite_file(DB_FILE, payload)
+        raise
 
 def send_sensor_data_periodically():
     retry_count = 0
     while True:
         try:
             oled_display.show_text(["HYDROPONICS", "Data MODE", "sending.."])
+            cache_readings()
             send_sensor_data()
             oled_display.show_text(["HYDROPONICS", "Data MODE", "sent..."])
             retry_count =0  # reset retry counter on success
@@ -328,6 +383,7 @@ def send_sensor_data_periodically():
         print(f"Waiting for {SEND_INTERVAL_SECONDS} seconds before next send...\n")
         time.sleep(SEND_INTERVAL_SECONDS)
 
+mode_selector()
 # def boot():
 #     if "register.json" in os.listdir():
 #         print("Config found → Running in NORMAL MODE")
