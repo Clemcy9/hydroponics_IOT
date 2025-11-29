@@ -188,12 +188,13 @@ class SensorModule:
     # Unified data collector
     # ------------------------------
     def read_all_sensors(self):
+        tds, voltage = self.read_tds_isolated()
         ambient_temp, humidity = self.read_dht()
         water_temp = self.read_ds18b20()
-        tds, voltage = self.read_tds_isolated()
         distance = self.read_ultrasonic()
-        ph, v = self.read_ph_isolated()
         ldr = self.read_ldr()
+        utime.sleep_ms(1000)
+        ph, v = self.read_ph_isolated()
 
         readings = {
             "ambient_temp": round(ambient_temp,1),
