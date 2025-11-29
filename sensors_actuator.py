@@ -79,12 +79,12 @@ class SensorModule:
     
     def read_ph(self):
         # Read raw ADC value
-        self.raw = self.ph_sensor.read_u16()
-        self.voltage = (self.raw / self.ADC_RESOLUTION) * self.VREF
+        raw = self.ph_sensor.read_u16()
+        voltage = (raw / self.ADC_RESOLUTION) * self.VREF
         
         # Convert voltage to pH using calibration
-        self.ph_value = 7.0 + (self.voltage - self.voltage_at_pH7) * self.slope
-        return self.ph_value, self.voltage
+        ph_value = 7.0 + (voltage - self.voltage_at_pH7) * self.slope
+        return ph_value, voltage
 
     def read_dht(self):
         try:
@@ -148,15 +148,51 @@ class SensorModule:
             print("Ultrasonic read error:", e)
             return None
 
+    def read_ph_isolated(self):
+        """Read pH with multiple samples (no TDS reads happening)."""
+        samples = 10
+        total = 0
+        for _ in range(samples):
+            raw = self.ph_sensor.read_u16()
+            total += raw
+            utime.sleep_ms(20)
+
+        avg_raw = total // samples
+        voltage = (avg_raw / self.ADC_RESOLUTION) * self.VREF
+        ph_value = 7.0 + (voltage - self.voltage_at_pH7) * self.slope
+        return ph_value, voltage
+
+
+    def read_tds_isolated(self):
+        """Read TDS with multiple samples after pH is finished."""
+        samples = 10
+        total = 0
+        for _ in range(samples):
+            total += self.tds_adc.read_u16()
+            utime.sleep_ms(20)
+
+        avg_raw = total // samples
+        voltage = (avg_raw / 65535) * self.VREF
+
+        comp_coeff = 1.0 + 0.02 * (self.water_temp - 25.0)
+        comp_voltage = voltage / comp_coeff
+
+        tds = (
+            133.42 * comp_voltage**3
+            - 255.86 * comp_voltage**2
+            + 857.39 * comp_voltage
+        ) * self.K_VALUE
+
+        return round(tds, 2), round(voltage, 2)
     # ------------------------------
     # Unified data collector
     # ------------------------------
     def read_all_sensors(self):
         ambient_temp, humidity = self.read_dht()
         water_temp = self.read_ds18b20()
-        tds, voltage = self.read_tds()
+        tds, voltage = self.read_tds_isolated()
         distance = self.read_ultrasonic()
-        ph, v = self.read_ph()
+        ph, v = self.read_ph_isolated()
         ldr = self.read_ldr()
 
         readings = {
@@ -164,10 +200,11 @@ class SensorModule:
             "humidity": humidity,
             "water_temp": round(water_temp,1),
             "tds": round(tds,1),
-            #"tds_voltage": voltage,
+            "tds_voltage": voltage,
             "ldr": ldr,
             "water_level": round(distance,1),
-            "ph":round(ph,1)
+            "ph":round(ph,1),
+            "ph_v":round(v)
         }
 
         self.display_data(readings)
@@ -181,8 +218,8 @@ class SensorModule:
             f"AT:{readings['ambient_temp']}C  H:{readings['humidity']}%",
             f"WT:{readings['water_temp']}C Ldr:{readings['ldr']}",
             f"TDS:{readings['tds']}ppm",
-            f"WL:{readings['water_level']}cm",
-            f"PH:{readings['ph']}",
+            f"WL:{readings['water_level']}cm, Tds-v:{readings['tds_voltage']}",
+            f"PH:{readings['ph']} PH-v:{readings['ph_v']}",
         ]
         self.display.show_text(lines)
 

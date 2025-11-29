@@ -60,6 +60,7 @@ def mode_selector(*args, **kwargs):
         check_internet()
         if(not load_file(REGISTER_FILE) and not load_file(DB_FILE) ):
             # REGISTRATION MODE
+            oled_display.show_text(["HYDROPONICS", "REGISTRATION MODE"])
             print("Registration mode")
             time.sleep(2)
             register_iot()
@@ -71,6 +72,7 @@ def mode_selector(*args, **kwargs):
         
         if(load_file(REGISTER_FILE)):
             # RELAY (normal) MODE
+            oled_display.show_text(["HYDROPONICS", "RELAY MODE"])
             print("Relay mode")
             time.sleep(2)
             send_sensor_data_periodically()
@@ -81,6 +83,7 @@ def mode_selector(*args, **kwargs):
     except NoInternetException as e:
         if(load_file(REGISTER_FILE) ):
             # DATA_BANK MODE
+            oled_display.show_text(["HYDROPONICS", "DATA_BANK MODE"])
             print("DATA_BANK mode")
             time.sleep(2)
 
@@ -94,6 +97,7 @@ def mode_selector(*args, **kwargs):
             mode_selector()
         elif( not load_file(REGISTER_FILE)):
             # DATA_LOGGING MODE
+            oled_display.show_text(["HYDROPONICS", "DATA_LOGGING2 MODE"])
             print("DATA_LOGGING mode2")
 
             t1 = time.time()
@@ -105,15 +109,17 @@ def mode_selector(*args, **kwargs):
             mode_selector()
     except NotConnectedWifi as e:
         # DATA_LOGGING MODE
+        # this mode latches, does not auto switch to another mode except turn off 
+        oled_display.show_text(["HYDROPONICS", "DATA_LOGGING MODE"])
         print("DATA_LOGGING mode")
 
         t1 = time.time()
         while True:
             t2 = time.time()
             sensor_data.read_all_sensors()
-            if(t2-t1 > DEBUB_TIME_INTERVAL):
-                break
-        mode_selector()
+        #     if(t2-t1 > DEBUB_TIME_INTERVAL):
+        #         break
+        # mode_selector()
 
 
 # commented because hardware not available
