@@ -30,7 +30,7 @@ if MODE == "local":
     SERVER_BASE_URL = SETTINGS["local"]["SERVER_BASE_URL"]
 
 
-DATA_CACHING_INTERVAL_SECONDS = 2
+DATA_CACHING_INTERVAL_SECONDS = 60
 SEND_INTERVAL_SECONDS = 5  # can be 60 for 1 min
 DEBUB_TIME_INTERVAL = 30
 MAX_RETRIES = 5  # stop loop after 5 consecutive failures
@@ -316,10 +316,11 @@ def cache_readings():
             #             "name":name,
             #             "value": str(actuator_states[name]),
             #         })
-
+            # update timer to ensure next list append happens after said interval
+            t1=time.time()
             # save payload to db.json()
             # only save to db.json() after 10 iteration of appending readings to payload
-            if (counter%3 ==0):
+            if (counter%10 ==0):
                 append_file(DB_FILE, payload)
                 print(f'saved payload to db after {counter} iteration')
                 # exit after saving a batch so operations like send() can work
@@ -381,7 +382,7 @@ def send_sensor_data_periodically():
         
                 break
         print(f"Waiting for {SEND_INTERVAL_SECONDS} seconds before next send...\n")
-        time.sleep(SEND_INTERVAL_SECONDS)
+        # time.sleep(SEND_INTERVAL_SECONDS)
 
 mode_selector()
 # def boot():
