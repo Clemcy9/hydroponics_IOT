@@ -1,160 +1,137 @@
-cloud server url: https://iot-server-9u9o.onrender.com/
+# 🚀 Hydroponics IoT Monitoring System
 
-✅ Project description
-✅ System architecture
-✅ User types and roles
-✅ IoT node configuration
-✅ Installation & setup
-✅ API flow
-✅ Sensor/Actuator information
-✅ Troubleshooting
-✅ Future improvements
+A smart hydroponics system that senses and logs essential environmental parameters to ensure optimal plant growth conditions.  
+The system measures:
 
-🌱 Hydroponics IoT Monitoring & Automation System
+- 🌞 Light Intensity
+- 💧 Air Humidity
+- 🌡️ Air Temperature
+- 🌡️ Water Temperature
+- 🧪 Total Dissolved Solids (TDS)
+- ⚗️ pH Level of Water
 
-MicroPython + Raspberry Pi Pico W + REST API Backend
+The device supports **three intelligent operation modes**:
+**Data Relay Mode**, **Data Bank Mode**, and **Debugging Mode**, automatically switching based on network availability.
 
-This project provides a complete IoT solution for monitoring and automating a hydroponics system.
-It features:
+---
 
-Real-time monitoring of temperature, humidity, water temperature, water quality (TDS), pH, and water level
+## 📦 Tech Stack
 
-Automated registration of IoT nodes
+### 🌐 Cloud
 
-Periodic sensor data upload to a backend server
+- Node.js + Express.js
+- MongoDB
+- Google Sheets (optional logging)
 
-Optional actuator control (pump, fan)
+### 🔧 Hardware
 
-OLED display for local system status
+- Raspberry Pi Pico W
+- MicroPython / Python
+- Sensors:
+  - DHT11/DHT22 (air temp & humidity)
+  - DS18B20 (water temperature)
+  - TDS sensor
+  - pH sensor
+  - Light/LDR sensor
+- WiFi connectivity
 
-Offline mode with local config caching
+---
 
-📘 Table of Contents
+## 🧠 System Behavior
 
-Project Overview
+| Mode                | Trigger Condition                           | Behavior                                          |
+| ------------------- | ------------------------------------------- | ------------------------------------------------- |
+| **Data Relay Mode** | WiFi hotspot available **with internet**    | Sends data to cloud every 10 mins; logs on-screen |
+| **Data Bank Mode**  | WiFi hotspot available **without internet** | Saves data offline until internet returns         |
+| **Debugging Mode**  | No WiFi detected                            | Shows continuous logs on-screen only              |
 
-System Architecture
+📌 **Sensor reading interval:** every 1 minute  
+📌 **Cloud upload interval:** every 10 minutes
 
-User Types
+---
 
-Hardware Requirements
+## 🚀 How to Run the System
 
-Installation & Setup
+### 1. **Data Relay Mode (Cloud Connected)**
 
-Configuring the IoT Node
+Use this when real-time logging is required.
 
-How the System Works
+1. Create a hotspot with:
+   - **Name:** `Samsung Galaxy s8+`
+   - **Password:** `inchristalone`
+2. Ensure hotspot has **internet access**
+3. Power on the device
+4. The screen will display:  
+   **"RELAY mode"**
+5. Shortly after, data logs appear on the display
 
-Sensors & Actuators
+---
 
-API Endpoints
+### 2. **Data Bank Mode (Offline Logging)**
 
-Troubleshooting
+Activated when WiFi exists **without internet**.
 
-Future Improvements
+1. Turn on the hardware with WiFi present but **no internet**
+2. Screen shows:  
+   **"DATA BANK mode"**
+3. Data is saved offline
+4. When internet returns, stored data auto-syncs to cloud
 
-📍 Project Overview
+---
 
-This project enables a Raspberry Pi Pico W (or Zero W) to function as an IoT node in a hydroponics setup.
-It performs the following tasks:
+### 3. **Debugging Mode (No WiFi)**
 
-✔ Automatically registers itself with the server
-✔ Retrieves assigned sensor & actuator IDs
-✔ Periodically reads all sensors
-✔ Sends readings to /readings API endpoint
-✔ Displays readings on OLED
-✔ Supports reconnect and retry logic
+Use this for calibration and hardware testing.
 
-A config.json file is saved after registration — this file connects the node to its server identity.
+1. Turn on the hardware **without WiFi**
+2. Screen displays:  
+   **"DEBUGGING mode"**
+3. Sensor readings display continuously
 
-🏗 System Architecture
-┌──────────────────────────────────────────┐
-│ Backend Server (Flask/FastAPI) │
-│ - IoT Registration (/iot/register) │
-│ - Save readings (/readings) │
-│ - Database for sensors & actuators │
-└──────────────────────────────────────────┘
-▲
-│ HTTP POST (JSON)
-▼
-┌───────────────────────────────────┐
-│ IoT Node (Pico W / ESP32) │
-│ - Reads sensors │
-│ - Sends data │
-│ - Displays info on OLED │
-│ - Uses config.json after signup │
-└───────────────────────────────────┘
-▲
-│ I²C / Analog / GPIO
-▼
-┌──────────────────────┐
-│ Sensors │
-└──────────────────────┘
+---
 
-👤 User Types
-🟩 1. Owner (System Administrator)
+## 📁 Project Structure (Example)
 
-Manages the backend dashboard and controls:
+project/
+│── cloud-api/
+│ ├── server.js
+│ ├── routes/
+│ ├── controllers/
+│ ├── models/
+│ └── utils/
+│
+│── pico-firmware/
+│ ├── boot.py
+│ ├── main.py
+│ ├── sensors_actuactor.py
+│ ├── lib/
 
-Registered IoT nodes
+---
 
-Sensor assignments
+## 📊 Data Flow Overview
 
-Actuator states (pump, fan)
+1. Sensors capture environmental readings every **1 minute**
+2. Pico W analyzes and prepares the readings
+3. Depending on mode:
+   - Sends data to cloud every **10 minutes**
+   - Stores data offline
+   - Displays debugging data
+4. Cloud API stores data in:
+   - MongoDB
+   - Google Sheets (optional mirror)
 
-View historical data
+---
 
-Configure thresholds & alerts
+## 🤝 Contributing
 
-🟦 2. IoT Node
+Contributions, hardware improvements, and optimizations are welcome!  
+Feel free to open an issue or submit a pull request.
 
-Runs the MicroPython script.
-Responsibilities:
+---
 
-Connect to WiFi
+## 📄 License
 
-Register itself and fetch IDs
-
-Read all sensors
-
-Post sensor data periodically
-
-Retry if connection fails
-
-Display data on OLED
-
-🧰 Hardware Requirements
-Component Purpose
-Raspberry Pi Pico W Main IoT controller
-SSD1306 OLED (I2C) On-device UI feedback
-DHT11 Ambient temp & humidity
-DS18B20 Water temperature
-TDS Sensor Water quality
-Ultrasonic HC-SR04 Water level
-pH Sensor (analog) pH reading
-Relay modules Pump / fan control
-Jumper wires Connections
-🛠 Installation & Setup
-1️⃣ Install MicroPython Firmware
-
-Flash MicroPython onto the Pico W using Thonny or picotool.
-
-2️⃣ Project Files to Upload
-
-Upload these files to the Pico:
-
-main.py
-sensors_actuator.py
-ssd1306.py
-config.json (auto-created after registration)
-
-3️⃣ Configure WiFi + Server Settings
-
-Inside main.py update:
-
-WIFI_SSID = "your_wifi_ssid"
-WIFI_PASSWORD = "your_wifi_password"
-SERVER_BASE_URL = "http://<your-server-ip>:5000"
+MIT License.
 
 4️⃣ Required Python Libraries on Pico
 
@@ -189,13 +166,13 @@ Sensor \_ids
 
 Actuator \_ids
 
-Save response to config.json
+Save response to reg.json
 
 Switch to normal mode
 
 Normal Mode
 
-If config.json exists, the Pico:
+If reg.json exists, the Pico:
 
 Reads all sensors using SensorModule
 
@@ -258,22 +235,3 @@ Registers the IoT node and returns sensor/actuator IDs.
 POST /readings
 
 Accepts periodic sensor payloads.
-
-🪲 Troubleshooting
-Issue Cause Fix
-Cannot connect WiFi Wrong SSID/password Update WIFI_SSID
-Registration fails Server not reachable Check SERVER_BASE_URL
-No sensor data Sensors wired incorrectly Confirm GPIO pins
-OLED blank Wrong SDA/SCL pins Update OledDisplay pins
-DS18B20 not found Missing pull-up resistor Add 4.7kΩ
-🚀 Future Improvements
-
-MQTT version (instead of HTTP polling)
-
-Over-the-air firmware updates
-
-Actuator automation rules (pump auto-on/off)
-
-Encrypted communication
-
-Add camera monitoring
